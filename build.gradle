@@ -4,16 +4,19 @@ plugins {
     id 'java'
     id 'net.minecraftforge.gradle' version '[6.0,6.2)'
     id 'org.parchmentmc.librarian.forgegradle' version '1.+'
-    id 'com.github.johnrengelman.shadow' version '8.1.1'
+    id 'com.gradleup.shadow' version '9.2.2'
 }
 
 
-group = mod_group_id
-version = mod_version
+group = 'org.eeebsie'
+version = '0.1.0'
 
 base {
-    archivesName = mod_id
+    archivesName = 'disbounties'
 }
+
+sourceCompatibility = JavaVersion.VERSION_17
+targetCompatibility = JavaVersion.VERSION_17
 
 java {
     toolchain.languageVersion = JavaLanguageVersion.of(17)
@@ -142,8 +145,13 @@ dependencies {
     // The "userdev" classifier will be requested and setup by ForgeGradle.
     // If the group id is "net.minecraft" and the artifact id is one of ["client", "server", "joined"],
     // then special handling is done to allow a setup of a vanilla dependency without the use of an external repository.
+    // Forge dependencies
     minecraft 'net.minecraftforge:forge:1.20.1-47.4.0'
-    implementation 'com.mysql:mysql-connector-j:8.3.0'
+
+    // Your MySQL driver
+    implementation files('libs/mysql-connector-j-8.4.0.jar')
+    implementation('com.gradleup.shadow:com.gradleup.shadow.gradle.plugin:9.2.2')
+//    runtimeOnly group: 'mysql', name: 'mysql-connector-j', version: '8.4.0' // Use a modern, stable version
     // Example mod dependency with JEI - using fg.deobf() ensures the dependency is remapped to your development mappings
     // The JEI API is declared for compile time use, while the full JEI artifact is used at runtime
     // compileOnly fg.deobf("mezz.jei:jei-${mc_version}-common-api:${jei_version}")
@@ -199,6 +207,14 @@ tasks.withType(JavaCompile).configureEach {
     options.encoding = 'UTF-8' // Use the UTF-8 charset for Java compilation
 }
 shadowJar {
-    archiveClassifier.set('')
-    configurations = [project.configurations.runtimeClasspath]
+    archiveClassifier.set('') // overwrite normal jar output
+    configurations = [project.configurations.runtimeClasspath] // include runtime deps
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+}
+jar {
+    // Include runtime dependencies inside your mod .jar
+    from {
+        configurations.runtimeClasspath.collect { it.isDirectory() ? it : zipTree(it) }
+    }
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
 }
